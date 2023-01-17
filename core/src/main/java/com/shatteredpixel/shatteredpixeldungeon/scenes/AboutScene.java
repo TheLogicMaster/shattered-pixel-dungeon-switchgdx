@@ -151,6 +151,23 @@ public class AboutScene extends PixelScene {
 		//*** libGDX Credits ***
 
 		final int GDX_COLOR = 0xE44D3C;
+
+		CreditsBlock switchgdx = new CreditsBlock(true,
+				GDX_COLOR,
+				"SwitchGDX",
+				Icons.CONTROLLER.get(),
+				"Ported with _SwitchGDX_ by _TheLogicMaster_",
+				"repo",
+				"https://github.com/TheLogicMaster/shattered-pixel-dungeon-switchgdx/");
+		if (landscape()){
+			switchgdx.setRect((w - fullWidth) / 2f - colWidth / 2, wata.bottom() + 8, colWidth, 0);
+		} else {
+			switchgdx.setRect((w - fullWidth) / 2f - colWidth / 2, cube.bottom() + 8, colWidth, 0);
+		}
+		content.add(switchgdx);
+
+		addLine(switchgdx.top() - 4, content);
+
 		CreditsBlock gdx = new CreditsBlock(true,
 				GDX_COLOR,
 				"libGDX",
@@ -159,9 +176,9 @@ public class AboutScene extends PixelScene {
 				"libGDX.com",
 				"https://libGDX.com/");
 		if (landscape()){
-			gdx.setRect(wata.left(), wata.bottom() + 8, colWidth, 0);
+			gdx.setRect(switchgdx.right() + 1, wata.bottom() + 8, colWidth, 0);
 		} else {
-			gdx.setRect(wata.left(), cube.bottom() + 8, colWidth, 0);
+			gdx.setRect(switchgdx.right() + 1, cube.bottom() + 8, colWidth, 0);
 		}
 		content.add(gdx);
 

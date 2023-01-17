@@ -1,0 +1,17 @@
+{
+    "mainClass": "com.thelogicmaster.switchgdx.SwitchLauncher",
+    "reflective": [
+        "com.watabou.noosa.NoosaScriptNoLighting",
+        "com.watabou.noosa.NoosaScript",
+        "com.watabou.noosa.particles.**",
+        "com.shatteredpixel.shatteredpixeldungeon.scenes.**",
+        "com.shatteredpixel.shatteredpixeldungeon.sprites.**",
+        "com.shatteredpixel.shatteredpixeldungeon.effects.**",
+        "com.shatteredpixel.shatteredpixeldungeon.actors.**",
+        "com.shatteredpixel.shatteredpixeldungeon.items.**",
+        "com.shatteredpixel.shatteredpixeldungeon.levels.**",
+        "com.shatteredpixel.shatteredpixeldungeon.plants.**",
+        "com.shatteredpixel.shatteredpixeldungeon.journal.**",
+        "com.shatteredpixel.shatteredpixeldungeon.Rankings$Record"
+    ]
+}

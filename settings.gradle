@@ -3,7 +3,7 @@ include ':SPD-classes'
 include ':core'
 
 //platform modules
-include ':android'
+//include ':android'
 include ':ios'
 include ':desktop'
 
@@ -15,3 +15,4 @@ include ':services'
     //news
     include ':services:news:debugNews'
     include ':services:news:shatteredNews'
+include 'switch'
