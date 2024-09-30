@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.PathFinder;
 
+import java.util.ArrayList;
+
 public class PitfallTrap extends Trap {
 
 	{
@@ -48,20 +50,23 @@ public class PitfallTrap extends Trap {
 	@Override
 	public void activate() {
 		
-		if( Dungeon.bossLevel() || Dungeon.depth > 25){
+		if( Dungeon.bossLevel() || Dungeon.depth > 25 || Dungeon.branch != 0){
 			GLog.w(Messages.get(this, "no_pit"));
 			return;
 		}
 
-		DelayedPit p = Buff.affect(Dungeon.hero, DelayedPit.class, 1);
+		DelayedPit p = Buff.append(Dungeon.hero, DelayedPit.class, 1);
 		p.depth = Dungeon.depth;
-		p.pos = pos;
+		p.branch = Dungeon.branch;
 
+		ArrayList<Integer> positions = new ArrayList<>();
 		for (int i : PathFinder.NEIGHBOURS9){
 			if (!Dungeon.level.solid[pos+i] || Dungeon.level.passable[pos+i]){
 				CellEmitter.floor(pos+i).burst(PitfallParticle.FACTORY4, 8);
+				positions.add(pos+i);
 			}
 		}
+		p.setPositions(positions);
 
 		if (pos == Dungeon.hero.pos){
 			GLog.n(Messages.get(this, "triggered_hero"));
@@ -77,26 +82,39 @@ public class PitfallTrap extends Trap {
 			revivePersists = true;
 		}
 
-		int pos;
-		int depth;
+		public int[] positions = new int[0];
+		public int depth;
+		public int branch;
+
+		public boolean ignoreAllies = false;
 
 		@Override
 		public boolean act() {
 
 			boolean herofell = false;
-			if (depth == Dungeon.depth) {
-				for (int i : PathFinder.NEIGHBOURS9) {
+			if (depth == Dungeon.depth && branch == Dungeon.branch && positions != null) {
+				for (int cell : positions) {
 
-					int cell = pos + i;
-
-					if (Dungeon.level.solid[pos+i] && !Dungeon.level.passable[pos+i]){
+					if (!Dungeon.level.insideMap(cell)
+							|| (Dungeon.level.solid[cell] && !Dungeon.level.passable[cell])){
 						continue;
 					}
 
-					CellEmitter.floor(pos+i).burst(PitfallParticle.FACTORY8, 12);
+					CellEmitter.floor(cell).burst(PitfallParticle.FACTORY8, 12);
+
+					Char ch = Actor.findChar(cell);
+					//don't trigger on flying chars, or immovable neutral chars
+					if (ch != null && !ch.flying
+							&& !(ch.alignment == Char.Alignment.NEUTRAL && Char.hasProp(ch, Char.Property.IMMOVABLE))
+							&& !(ch.alignment == Char.Alignment.ALLY && ignoreAllies)) {
+						if (ch == Dungeon.hero) {
+							herofell = true;
+						} else {
+							Chasm.mobFall((Mob) ch);
+						}
+					}
 
 					Heap heap = Dungeon.level.heaps.get(cell);
-
 					if (heap != null && heap.type != Heap.Type.FOR_SALE
 							&& heap.type != Heap.Type.LOCKED_CHEST
 							&& heap.type != Heap.Type.CRYSTAL_CHEST) {
@@ -105,44 +123,51 @@ public class PitfallTrap extends Trap {
 						}
 						heap.sprite.kill();
 						GameScene.discard(heap);
+						heap.sprite.drop();
 						Dungeon.level.heaps.remove(cell);
 					}
 
-					Char ch = Actor.findChar(cell);
-
-					//don't trigger on flying chars, or immovable neutral chars
-					if (ch != null && !ch.flying
-						&& !(ch.alignment == Char.Alignment.NEUTRAL && Char.hasProp(ch, Char.Property.IMMOVABLE))) {
-						if (ch == Dungeon.hero) {
-							Chasm.heroFall(cell);
-							herofell = true;
-						} else {
-							Chasm.mobFall((Mob) ch);
-						}
-					}
-
 				}
+			}
+
+			//process hero falling last
+			if (herofell){
+				Chasm.heroFall(Dungeon.hero.pos);
 			}
 
 			detach();
 			return !herofell;
 		}
 
-		private static final String POS = "pos";
+		public void setPositions(ArrayList<Integer> positions){
+			this.positions = new int[positions.size()];
+			for (int i = 0; i < this.positions.length; i++){
+				this.positions[i] = positions.get(i);
+			}
+		}
+
+		private static final String POSITIONS = "positions";
 		private static final String DEPTH = "depth";
+		private static final String BRANCH = "branch";
+
+		private static final String IGNORE_ALLIES = "ignore_allies";
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
 			super.storeInBundle(bundle);
-			bundle.put(POS, pos);
+			bundle.put(POSITIONS, positions);
 			bundle.put(DEPTH, depth);
+			bundle.put(BRANCH, branch);
+			bundle.put(IGNORE_ALLIES, ignoreAllies);
 		}
 
 		@Override
 		public void restoreFromBundle(Bundle bundle) {
 			super.restoreFromBundle(bundle);
-			pos = bundle.getInt(POS);
+			positions = bundle.getIntArray(POSITIONS);
 			depth = bundle.getInt(DEPTH);
+			branch = bundle.getInt(BRANCH);
+			ignoreAllies = bundle.getBoolean(IGNORE_ALLIES);
 		}
 
 	}

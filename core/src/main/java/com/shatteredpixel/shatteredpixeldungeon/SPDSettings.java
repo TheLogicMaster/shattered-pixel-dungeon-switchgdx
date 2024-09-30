@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@ package com.shatteredpixel.shatteredpixeldungeon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Languages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
-import com.shatteredpixel.shatteredpixeldungeon.utils.DungeonSeed;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Music;
 import com.watabou.noosa.audio.Sample;
@@ -57,6 +56,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_BRIGHTNESS	= "brightness";
 	public static final String KEY_GRID 	    = "visual_grid";
 	public static final String KEY_CAMERA_FOLLOW= "camera_follow";
+	public static final String KEY_SCREEN_SHAKE = "screen_shake";
 	
 	public static void fullscreen( boolean value ) {
 		put( KEY_FULLSCREEN, value );
@@ -120,11 +120,18 @@ public class SPDSettings extends GameSettings {
 
 	public static void cameraFollow( int value ){
 		put( KEY_CAMERA_FOLLOW, value );
-		GameScene.updateMap();
 	}
 
 	public static int cameraFollow() {
 		return getInt( KEY_CAMERA_FOLLOW, 4, 1, 4 );
+	}
+
+	public static void screenShake( int value ){
+		put( KEY_SCREEN_SHAKE, value );
+	}
+
+	public static int screenShake() {
+		return getInt( KEY_SCREEN_SHAKE, 2, 0, 4 );
 	}
 	
 	//Interface
@@ -135,6 +142,9 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_FLIPTOOLBAR	= "flipped_ui";
 	public static final String KEY_FLIPTAGS 	= "flip_tags";
 	public static final String KEY_BARMODE		= "toolbar_mode";
+	public static final String KEY_SLOTWATERSKIN= "quickslot_waterskin";
+	public static final String KEY_SYSTEMFONT	= "system_font";
+	public static final String KEY_VIBRATION    = "vibration";
 
 	//0 = mobile, 1 = mixed (large without inventory in main UI), 2 = large
 	public static void interfaceSize( int value ){
@@ -185,7 +195,32 @@ public class SPDSettings extends GameSettings {
 	public static String toolbarMode() {
 		return getString(KEY_BARMODE, PixelScene.landscape() ? "GROUP" : "SPLIT");
 	}
-	
+
+	public static void quickslotWaterskin( boolean value ){
+		put( KEY_SLOTWATERSKIN, value);
+	}
+
+	public static boolean quickslotWaterskin(){
+		return getBoolean( KEY_SLOTWATERSKIN, true );
+	}
+
+	public static void systemFont(boolean value){
+		put(KEY_SYSTEMFONT, value);
+	}
+
+	public static boolean systemFont(){
+		return getBoolean(KEY_SYSTEMFONT,
+				(language() == Languages.KOREAN || language() == Languages.CHINESE || language() == Languages.JAPANESE));
+	}
+
+	public static void vibration(boolean value){
+		put(KEY_VIBRATION, value);
+	}
+
+	public static boolean vibration(){
+		return getBoolean(KEY_VIBRATION, true);
+	}
+
 	//Game State
 	
 	public static final String KEY_LAST_CLASS	= "last_class";
@@ -195,6 +230,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_INTRO		= "intro";
 
 	public static final String KEY_SUPPORT_NAGGED= "support_nagged";
+	public static final String KEY_VICTORY_NAGGED= "victory_nagged";
 	
 	public static void intro( boolean value ) {
 		put( KEY_INTRO, value );
@@ -244,6 +280,14 @@ public class SPDSettings extends GameSettings {
 		return getBoolean(KEY_SUPPORT_NAGGED, false);
 	}
 
+	public static void victoryNagged( boolean value ) {
+		put( KEY_VICTORY_NAGGED, value );
+	}
+
+	public static boolean victoryNagged() {
+		return getBoolean(KEY_VICTORY_NAGGED, false);
+	}
+
 	//Input
 
 	public static final String KEY_CONTROLLER_SENS  = "controller_sens";
@@ -263,86 +307,6 @@ public class SPDSettings extends GameSettings {
 
 	public static int movementHoldSensitivity(){
 		return getInt(KEY_MOVE_SENS, 3, 0, 4);
-	}
-
-	//Audio
-	
-	public static final String KEY_MUSIC		= "music";
-	public static final String KEY_MUSIC_VOL    = "music_vol";
-	public static final String KEY_SOUND_FX		= "soundfx";
-	public static final String KEY_SFX_VOL      = "sfx_vol";
-	public static final String KEY_IGNORE_SILENT= "ignore_silent";
-	
-	public static void music( boolean value ) {
-		Music.INSTANCE.enable( value );
-		put( KEY_MUSIC, value );
-	}
-	
-	public static boolean music() {
-		return getBoolean( KEY_MUSIC, true );
-	}
-	
-	public static void musicVol( int value ){
-		Music.INSTANCE.volume(value*value/100f);
-		put( KEY_MUSIC_VOL, value );
-	}
-	
-	public static int musicVol(){
-		return getInt( KEY_MUSIC_VOL, 10, 0, 10 );
-	}
-	
-	public static void soundFx( boolean value ) {
-		Sample.INSTANCE.enable( value );
-		put( KEY_SOUND_FX, value );
-	}
-	
-	public static boolean soundFx() {
-		return getBoolean( KEY_SOUND_FX, true );
-	}
-	
-	public static void SFXVol( int value ) {
-		Sample.INSTANCE.volume(value*value/100f);
-		put( KEY_SFX_VOL, value );
-	}
-	
-	public static int SFXVol() {
-		return getInt( KEY_SFX_VOL, 10, 0, 10 );
-	}
-
-	public static void ignoreSilentMode( boolean value ){
-		put( KEY_IGNORE_SILENT, value);
-		Game.platform.setHonorSilentSwitch(!value);
-	}
-
-	public static boolean ignoreSilentMode(){
-		return getBoolean( KEY_IGNORE_SILENT, false);
-	}
-	
-	//Languages and Font
-	
-	public static final String KEY_LANG         = "language";
-	public static final String KEY_SYSTEMFONT	= "system_font";
-	
-	public static void language(Languages lang) {
-		put( KEY_LANG, lang.code());
-	}
-	
-	public static Languages language() {
-		String code = getString(KEY_LANG, null);
-		if (code == null){
-			return Languages.matchLocale(Locale.getDefault());
-		} else {
-			return Languages.matchCode(code);
-		}
-	}
-	
-	public static void systemFont(boolean value){
-		put(KEY_SYSTEMFONT, value);
-	}
-	
-	public static boolean systemFont(){
-		return getBoolean(KEY_SYSTEMFONT,
-				(language() == Languages.KOREAN || language() == Languages.CHINESE || language() == Languages.JAPANESE));
 	}
 
 	//Connectivity
@@ -393,13 +357,93 @@ public class SPDSettings extends GameSettings {
 	public static long newsLastRead(){
 		return getLong(KEY_NEWS_LAST_READ, 0);
 	}
+
+	//Audio
 	
+	public static final String KEY_MUSIC		= "music";
+	public static final String KEY_MUSIC_VOL    = "music_vol";
+	public static final String KEY_SOUND_FX		= "soundfx";
+	public static final String KEY_SFX_VOL      = "sfx_vol";
+	public static final String KEY_IGNORE_SILENT= "ignore_silent";
+	public static final String KEY_MUSIC_BG     = "music_bg";
+	
+	public static void music( boolean value ) {
+		Music.INSTANCE.enable( value );
+		put( KEY_MUSIC, value );
+	}
+	
+	public static boolean music() {
+		return getBoolean( KEY_MUSIC, true );
+	}
+	
+	public static void musicVol( int value ){
+		Music.INSTANCE.volume(value*value/100f);
+		put( KEY_MUSIC_VOL, value );
+	}
+	
+	public static int musicVol(){
+		return getInt( KEY_MUSIC_VOL, 10, 0, 10 );
+	}
+	
+	public static void soundFx( boolean value ) {
+		Sample.INSTANCE.enable( value );
+		put( KEY_SOUND_FX, value );
+	}
+	
+	public static boolean soundFx() {
+		return getBoolean( KEY_SOUND_FX, true );
+	}
+	
+	public static void SFXVol( int value ) {
+		Sample.INSTANCE.volume(value*value/100f);
+		put( KEY_SFX_VOL, value );
+	}
+	
+	public static int SFXVol() {
+		return getInt( KEY_SFX_VOL, 10, 0, 10 );
+	}
+
+	public static void ignoreSilentMode( boolean value ){
+		put( KEY_IGNORE_SILENT, value);
+		Game.platform.setHonorSilentSwitch(!value);
+	}
+
+	public static boolean ignoreSilentMode(){
+		return getBoolean( KEY_IGNORE_SILENT, false);
+	}
+
+	public static void playMusicInBackground( boolean value ){
+		put( KEY_MUSIC_BG, value);
+	}
+
+	public static boolean playMusicInBackground(){
+		return getBoolean( KEY_MUSIC_BG, true);
+	}
+	
+	//Languages
+	
+	public static final String KEY_LANG         = "language";
+	
+	public static void language(Languages lang) {
+		put( KEY_LANG, lang.code());
+	}
+	
+	public static Languages language() {
+		String code = getString(KEY_LANG, null);
+		if (code == null){
+			return Languages.matchLocale(Locale.getDefault());
+		} else {
+			return Languages.matchCode(code);
+		}
+	}
+
 	//Window management (desktop only atm)
 	
 	public static final String KEY_WINDOW_WIDTH     = "window_width";
 	public static final String KEY_WINDOW_HEIGHT    = "window_height";
 	public static final String KEY_WINDOW_MAXIMIZED = "window_maximized";
-	
+	public static final String KEY_FULLSCREEN_MONITOR = "fullscreen_monitor";
+
 	public static void windowResolution( Point p ){
 		put(KEY_WINDOW_WIDTH, p.x);
 		put(KEY_WINDOW_HEIGHT, p.y);
@@ -420,4 +464,11 @@ public class SPDSettings extends GameSettings {
 		return getBoolean( KEY_WINDOW_MAXIMIZED, false );
 	}
 
+	public static void fulLScreenMonitor( int value ){
+		put( KEY_FULLSCREEN_MONITOR, value);
+	}
+
+	public static int fulLScreenMonitor(){
+		return getInt( KEY_FULLSCREEN_MONITOR, 0 );
+	}
 }

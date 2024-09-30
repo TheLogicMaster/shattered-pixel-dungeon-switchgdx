@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.quest.DwarfToken;
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.CityLevel;
+import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ImpSprite;
@@ -54,19 +55,23 @@ public class Imp extends NPC {
 	}
 	
 	private boolean seenBefore = false;
-	
+
+	@Override
+	public Notes.Landmark landmark() {
+		return Notes.Landmark.IMP;
+	}
+
 	@Override
 	protected boolean act() {
 		if (Dungeon.hero.buff(AscensionChallenge.class) != null){
 			die(null);
 			return true;
 		}
-		if (!Quest.given && Dungeon.level.heroFOV[pos]) {
-			if (!seenBefore) {
-				yell( Messages.get(this, "hey", Dungeon.hero.name() ) );
+		if (!Quest.given && Dungeon.level.visited[pos]) {
+			if (!seenBefore && Dungeon.level.heroFOV[pos]) {
+				yell(Messages.get(this, "hey", Messages.titleCase(Dungeon.hero.name())));
+				seenBefore = true;
 			}
-			Notes.add( Notes.Landmark.IMP );
-			seenBefore = true;
 		} else {
 			seenBefore = false;
 		}
@@ -78,13 +83,15 @@ public class Imp extends NPC {
 	public int defenseSkill( Char enemy ) {
 		return INFINITE_EVASION;
 	}
-	
+
 	@Override
 	public void damage( int dmg, Object src ) {
+		//do nothing
 	}
-	
+
 	@Override
-	public void add( Buff buff ) {
+	public boolean add( Buff buff ) {
+		return false;
 	}
 	
 	@Override
@@ -113,15 +120,16 @@ public class Imp extends NPC {
 				});
 			} else {
 				tell( Quest.alternative ?
-						Messages.get(this, "monks_2", Dungeon.hero.name())
-						: Messages.get(this, "golems_2", Dungeon.hero.name()) );
+						Messages.get(this, "monks_2", Messages.titleCase(Dungeon.hero.name()))
+						: Messages.get(this, "golems_2", Messages.titleCase(Dungeon.hero.name())) );
 			}
 			
 		} else {
-			tell( Quest.alternative ? Messages.get(this, "monks_1") : Messages.get(this, "golems_1") );
+			tell( Messages.get(this, "intro") + "\n\n" + (Quest.alternative ?
+					Messages.get(this, "monks_1", Messages.titleCase(Dungeon.hero.name()))
+					: Messages.get(this, "golems_1", Messages.titleCase(Dungeon.hero.name()))) );
 			Quest.given = true;
 			Quest.completed = false;
-			Notes.add( Notes.Landmark.IMP );
 		}
 
 		return true;
@@ -138,7 +146,7 @@ public class Imp extends NPC {
 	
 	public void flee() {
 		
-		yell( Messages.get(this, "cya", Dungeon.hero.name()) );
+		yell( Messages.get(this, "cya", Messages.titleCase(Dungeon.hero.name())) );
 		
 		destroy();
 		sprite.die();
@@ -156,6 +164,8 @@ public class Imp extends NPC {
 		
 		public static void reset() {
 			spawned = false;
+			given = false;
+			completed = false;
 
 			reward = null;
 		}
@@ -200,21 +210,28 @@ public class Imp extends NPC {
 		
 		public static void spawn( CityLevel level ) {
 			if (!spawned && Dungeon.depth > 16 && Random.Int( 20 - Dungeon.depth ) == 0) {
-				
+
 				Imp npc = new Imp();
+				int tries = 30;
 				do {
 					npc.pos = level.randomRespawnCell( npc );
+					tries--;
 				} while (
 						npc.pos == -1 ||
+						//visibility issues on these tiles, try to avoid them
+						(tries > 0 && level.map[ npc.pos ] == Terrain.EMPTY_SP) ||
 						level.heaps.get( npc.pos ) != null ||
 						level.traps.get( npc.pos) != null ||
 						level.findMob( npc.pos ) != null ||
-						//The imp doesn't move, so he cannot obstruct a passageway
-						!(level.passable[npc.pos + PathFinder.CIRCLE4[0]] && level.passable[npc.pos + PathFinder.CIRCLE4[2]]) ||
-						!(level.passable[npc.pos + PathFinder.CIRCLE4[1]] && level.passable[npc.pos + PathFinder.CIRCLE4[3]]));
+						//don't place the imp against solid terrain
+						!level.passable[npc.pos + PathFinder.CIRCLE4[0]] || !level.passable[npc.pos + PathFinder.CIRCLE4[1]] ||
+						!level.passable[npc.pos + PathFinder.CIRCLE4[2]] || !level.passable[npc.pos + PathFinder.CIRCLE4[3]]);
 				level.mobs.add( npc );
 				
 				spawned = true;
+
+				//imp always spawns on an empty tile, for better visibility
+				level.map[ npc.pos ] = Terrain.EMPTY;
 
 				//always assigns monks on floor 17, golems on floor 19, and 50/50 between either on 18
 				switch (Dungeon.depth){

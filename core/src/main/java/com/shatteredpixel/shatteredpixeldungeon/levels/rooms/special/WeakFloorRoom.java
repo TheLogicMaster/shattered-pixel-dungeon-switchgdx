@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ package com.shatteredpixel.shatteredpixeldungeon.levels.rooms.special;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.blobs.Blob;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Notes;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Level;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.levels.painters.Painter;
@@ -70,6 +72,8 @@ public class WeakFloorRoom extends SpecialRoom {
 		CustomTilemap vis = new HiddenWell();
 		vis.pos(well.x, well.y);
 		level.customTiles.add(vis);
+
+		Blob.seed( well.x + level.width() * well.y, 1, WellID.class, level );
 	}
 
 	public static class HiddenWell extends CustomTilemap {
@@ -94,6 +98,31 @@ public class WeakFloorRoom extends SpecialRoom {
 		@Override
 		public String desc(int tileX, int tileY) {
 			return Messages.get(this, "desc");
+		}
+
+	}
+
+	//we use a blob to track visibility of the well, yes this sucks
+	public static class WellID extends Blob {
+
+		@Override
+		public Notes.Landmark landmark() {
+			return Notes.Landmark.DISTANT_WELL;
+		}
+
+		@Override
+		protected void evolve() {
+			int cell;
+			for (int i=area.top-1; i <= area.bottom; i++) {
+				for (int j = area.left-1; j <= area.right; j++) {
+					cell = j + i* Dungeon.level.width();
+					if (Dungeon.level.insideMap(cell)) {
+						off[cell] = cur[cell];
+
+						volume += off[cell];
+					}
+				}
+			}
 		}
 
 	}

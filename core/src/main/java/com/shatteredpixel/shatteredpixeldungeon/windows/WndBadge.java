@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,9 @@ import com.shatteredpixel.shatteredpixeldungeon.effects.BadgeBanner;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
 import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
+import com.watabou.input.PointerEvent;
 import com.watabou.noosa.Image;
+import com.watabou.noosa.PointerArea;
 
 public class WndBadge extends Window {
 	
@@ -79,5 +81,14 @@ public class WndBadge extends Window {
 		resize( (int)w, (int)(info.bottom() + MARGIN) );
 		
 		if (unlocked) BadgeBanner.highlight( icon, badge.image );
+
+		PointerArea blocker = new PointerArea( 0, 0, PixelScene.uiCamera.width, PixelScene.uiCamera.height ) {
+			@Override
+			protected void onClick( PointerEvent event ) {
+				onBackPressed();
+			}
+		};
+		blocker.camera = PixelScene.uiCamera;
+		add(blocker);
 	}
 }

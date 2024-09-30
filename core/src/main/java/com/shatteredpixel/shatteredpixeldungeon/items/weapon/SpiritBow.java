@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ public class SpiritBow extends Weapon {
 
 	@Override
 	public String info() {
-		String info = desc();
+		String info = super.info();
 		
 		info += "\n\n" + Messages.get( SpiritBow.class, "stats",
 				Math.round(augment.damageFactor(min())),
@@ -157,10 +157,13 @@ public class SpiritBow extends Weapon {
 				break;
 			case NONE:
 		}
-		
+
 		if (enchantment != null && (cursedKnown || !enchantment.curse())){
-			info += "\n\n" + Messages.get(Weapon.class, "enchanted", enchantment.name());
-			info += " " + Messages.get(enchantment, "desc");
+			info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", enchantment.name()));
+			if (enchantHardened) info += " " + Messages.get(Weapon.class, "enchant_hardened");
+			info += " " + enchantment.desc();
+		} else if (enchantHardened){
+			info += "\n\n" + Messages.get(Weapon.class, "hardened_no_enchant");
 		}
 		
 		if (cursed && isEquipped( Dungeon.hero )) {
@@ -211,7 +214,7 @@ public class SpiritBow extends Weapon {
 		if (owner instanceof Hero) {
 			int exStr = ((Hero)owner).STR() - STRReq();
 			if (exStr > 0) {
-				damage += Random.IntRange( 0, exStr );
+				damage += Hero.heroDamageIntRange( 0, exStr );
 			}
 		}
 
@@ -338,7 +341,7 @@ public class SpiritBow extends Weapon {
 		
 		@Override
 		public int STRReq(int lvl) {
-			return SpiritBow.this.STRReq(lvl);
+			return SpiritBow.this.STRReq();
 		}
 
 		@Override
@@ -373,7 +376,12 @@ public class SpiritBow extends Weapon {
 				final Char enemy = Actor.findChar( cell );
 				
 				if (enemy == null){
-					user.spendAndNext(castDelay(user, dst));
+					if (user.buff(Talent.LethalMomentumTracker.class) != null){
+						user.buff(Talent.LethalMomentumTracker.class).detach();
+						user.next();
+					} else {
+						user.spendAndNext(castDelay(user, dst));
+					}
 					sniperSpecial = false;
 					flurryCount = -1;
 
@@ -383,14 +391,14 @@ public class SpiritBow extends Weapon {
 					}
 					return;
 				}
+
 				QuickSlotButton.target(enemy);
-				
-				final boolean last = flurryCount == 1;
 				
 				user.busy();
 				
 				throwSound();
-				
+
+				user.sprite.zap(cell);
 				((MissileSprite) user.sprite.parent.recycle(MissileSprite.class)).
 						reset(user.sprite,
 								cell,
@@ -402,9 +410,33 @@ public class SpiritBow extends Weapon {
 											curUser = user;
 											onThrow(cell);
 										}
-										
-										if (last) {
-											user.spendAndNext(castDelay(user, dst));
+
+										flurryCount--;
+										if (flurryCount > 0){
+											Actor.add(new Actor() {
+
+												{
+													actPriority = VFX_PRIO-1;
+												}
+
+												@Override
+												protected boolean act() {
+													flurryActor = this;
+													int target = QuickSlotButton.autoAim(enemy, SpiritArrow.this);
+													if (target == -1) target = cell;
+													cast(user, target);
+													Actor.remove(this);
+													return false;
+												}
+											});
+											curUser.next();
+										} else {
+											if (user.buff(Talent.LethalMomentumTracker.class) != null){
+												user.buff(Talent.LethalMomentumTracker.class).detach();
+												user.next();
+											} else {
+												user.spendAndNext(castDelay(user, dst));
+											}
 											sniperSpecial = false;
 											flurryCount = -1;
 										}
@@ -416,32 +448,6 @@ public class SpiritBow extends Weapon {
 									}
 								});
 				
-				user.sprite.zap(cell, new Callback() {
-					@Override
-					public void call() {
-						flurryCount--;
-						if (flurryCount > 0){
-							Actor.add(new Actor() {
-
-								{
-									actPriority = VFX_PRIO-1;
-								}
-
-								@Override
-								protected boolean act() {
-									flurryActor = this;
-									int target = QuickSlotButton.autoAim(enemy, SpiritArrow.this);
-									if (target == -1) target = cell;
-									cast(user, target);
-									Actor.remove(this);
-									return false;
-								}
-							});
-							curUser.next();
-						}
-					}
-				});
-				
 			} else {
 
 				if (user.hasTalent(Talent.SEER_SHOT)
@@ -450,6 +456,7 @@ public class SpiritBow extends Weapon {
 					if (Actor.findChar(shotPos) == null) {
 						RevealedArea a = Buff.affect(user, RevealedArea.class, 5 * user.pointsInTalent(Talent.SEER_SHOT));
 						a.depth = Dungeon.depth;
+						a.branch = Dungeon.branch;
 						a.pos = shotPos;
 						Buff.affect(user, Talent.SeerShotCooldown.class, 20f);
 					}

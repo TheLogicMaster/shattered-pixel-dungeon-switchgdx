@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,14 +58,21 @@ public class WandOfFireblast extends DamageWand {
 		collisionProperties = Ballistica.WONT_STOP;
 	}
 
-	//1x/2x/3x damage
+	//1/2/3 base damage with 1/2/3 scaling based on charges used
 	public int min(int lvl){
 		return (1+lvl) * chargesPerCast();
 	}
 
-	//1x/2x/3x damage
+	//2/8/18 base damage with 2/4/6 scaling based on charges used
 	public int max(int lvl){
-		return (6+2*lvl) * chargesPerCast();
+		switch (chargesPerCast()){
+			case 1: default:
+				return 2 + 2*lvl;
+			case 2:
+				return 2*(4 + 2*lvl);
+			case 3:
+				return 3*(6+2*lvl);
+		}
 	}
 
 	ConeAOE cone;
@@ -148,7 +155,7 @@ public class WandOfFireblast extends DamageWand {
 		new FireBlastOnHit().proc( staff, attacker, defender, damage);
 	}
 
-	private static class FireBlastOnHit extends Blazing {
+	public static class FireBlastOnHit extends Blazing {
 		@Override
 		protected float procChanceMultiplier(Char attacker) {
 			return Wand.procChanceMultiplier(attacker);
@@ -161,7 +168,6 @@ public class WandOfFireblast extends DamageWand {
 
 		// 5/7/9 distance
 		int maxDist = 3 + 2*chargesPerCast();
-		int dist = Math.min(bolt.dist, maxDist);
 
 		cone = new ConeAOE( bolt,
 				maxDist,
@@ -169,7 +175,11 @@ public class WandOfFireblast extends DamageWand {
 				Ballistica.STOP_TARGET | Ballistica.STOP_SOLID | Ballistica.IGNORE_SOFT_SOLID);
 
 		//cast to cells at the tip, rather than all cells, better performance.
+		Ballistica longestRay = null;
 		for (Ballistica ray : cone.outerRays){
+			if (longestRay == null || ray.dist > longestRay.dist){
+				longestRay = ray;
+			}
 			((MagicMissile)curUser.sprite.parent.recycle( MagicMissile.class )).reset(
 					MagicMissile.FIRE_CONE,
 					curUser.sprite,
@@ -178,11 +188,11 @@ public class WandOfFireblast extends DamageWand {
 			);
 		}
 
-		//final zap at half distance, for timing of the actual wand effect
+		//final zap at half distance of the longest ray, for timing of the actual wand effect
 		MagicMissile.boltFromChar( curUser.sprite.parent,
 				MagicMissile.FIRE_CONE,
 				curUser.sprite,
-				bolt.path.get(dist/2),
+				longestRay.path.get(longestRay.dist/2),
 				callback );
 		Sample.INSTANCE.play( Assets.Sounds.ZAP );
 		Sample.INSTANCE.play( Assets.Sounds.BURNING );
@@ -190,7 +200,8 @@ public class WandOfFireblast extends DamageWand {
 
 	@Override
 	protected int chargesPerCast() {
-		if (charger != null && charger.target.buff(WildMagic.WildMagicTracker.class) != null){
+		if (cursed ||
+				(charger != null && charger.target == null && charger.target.buff(WildMagic.WildMagicTracker.class) != null)){
 			return 1;
 		}
 		//consumes 30% of current charges, rounded up, with a min of 1 and a max of 3.
@@ -203,6 +214,21 @@ public class WandOfFireblast extends DamageWand {
 			return Messages.get(this, "stats_desc", chargesPerCast(), min(), max());
 		else
 			return Messages.get(this, "stats_desc", chargesPerCast(), min(0), max(0));
+	}
+
+	@Override
+	public String upgradeStat1(int level) {
+		return (1+level) + "-" + (2+2*level);
+	}
+
+	@Override
+	public String upgradeStat2(int level) {
+		return (2+2*level) + "-" + 2*(4+2*level);
+	}
+
+	@Override
+	public String upgradeStat3(int level) {
+		return (3+3*level) + "-" + 3*(6+2*level);
 	}
 
 	@Override

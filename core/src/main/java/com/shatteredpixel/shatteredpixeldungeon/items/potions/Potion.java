@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,12 +30,13 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Burning;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Ooze;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Splash;
 import com.shatteredpixel.shatteredpixeldungeon.items.Generator;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.ItemStatusHandler;
 import com.shatteredpixel.shatteredpixeldungeon.items.Recipe;
-import com.shatteredpixel.shatteredpixeldungeon.items.bags.Bag;
+import com.shatteredpixel.shatteredpixeldungeon.items.potions.brews.AquaBrew;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.elixirs.ElixirOfHoneyedHealing;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfCleansing;
@@ -47,11 +48,11 @@ import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.levels.Terrain;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Blindweed;
-import com.shatteredpixel.shatteredpixeldungeon.plants.Mageroyal;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Earthroot;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Fadeleaf;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Firebloom;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Icecap;
+import com.shatteredpixel.shatteredpixeldungeon.plants.Mageroyal;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Rotberry;
 import com.shatteredpixel.shatteredpixeldungeon.plants.Sorrowmoss;
@@ -101,8 +102,8 @@ public class Potion extends Item {
 			put("ivory",ItemSpriteSheet.POTION_IVORY);
 		}
 	};
-	
-	private static final HashSet<Class<?extends Potion>> mustThrowPots = new HashSet<>();
+
+	protected static final HashSet<Class<?extends Potion>> mustThrowPots = new HashSet<>();
 	static{
 		mustThrowPots.add(PotionOfToxicGas.class);
 		mustThrowPots.add(PotionOfLiquidFlame.class);
@@ -115,13 +116,11 @@ public class Potion extends Item {
 		mustThrowPots.add(PotionOfShroudingFog.class);
 		mustThrowPots.add(PotionOfStormClouds.class);
 		
-		//also all brews, hardcoded
+		//also all brews except unstable, hardcoded
 	}
 	
-	private static final HashSet<Class<?extends Potion>> canThrowPots = new HashSet<>();
+	protected static final HashSet<Class<?extends Potion>> canThrowPots = new HashSet<>();
 	static{
-		canThrowPots.add(AlchemicalCatalyst.class);
-		
 		canThrowPots.add(PotionOfPurity.class);
 		canThrowPots.add(PotionOfLevitation.class);
 		
@@ -135,6 +134,11 @@ public class Potion extends Item {
 	protected static ItemStatusHandler<Potion> handler;
 	
 	protected String color;
+
+	//affects how strongly on-potion talents trigger from this potion
+	protected float talentFactor = 1;
+	//the chance (0-1) of whether on-potion talents trigger from this potion
+	protected float talentChance = 1;
 	
 	{
 		stackable = true;
@@ -144,6 +148,10 @@ public class Potion extends Item {
 	@SuppressWarnings("unchecked")
 	public static void initColors() {
 		handler = new ItemStatusHandler<>( (Class<? extends Potion>[])Generator.Category.POTION.classes, colors );
+	}
+
+	public static void clearColors() {
+		handler = null;
 	}
 	
 	public static void save( Bundle bundle ) {
@@ -191,27 +199,20 @@ public class Potion extends Item {
 		if (handler != null && handler.contains(this)) {
 			image = handler.image(this);
 			color = handler.label(this);
+		} else {
+			image = ItemSpriteSheet.POTION_CRIMSON;
+			color = "crimson";
 		}
-		setAction();
 	}
-	
+
 	@Override
-	public boolean collect( Bag container ) {
-		if (super.collect( container )){
-			setAction();
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	public void setAction(){
+	public String defaultAction() {
 		if (isKnown() && mustThrowPots.contains(this.getClass())) {
-			defaultAction = AC_THROW;
+			return AC_THROW;
 		} else if (isKnown() &&canThrowPots.contains(this.getClass())){
-			defaultAction = AC_CHOOSE;
+			return AC_CHOOSE;
 		} else {
-			defaultAction = AC_DRINK;
+			return AC_DRINK;
 		}
 	}
 	
@@ -293,6 +294,13 @@ public class Potion extends Item {
 		Sample.INSTANCE.play( Assets.Sounds.DRINK );
 		
 		hero.sprite.operate( hero.pos );
+
+		if (!anonymous) {
+			Catalog.countUse(getClass());
+			if (Random.Float() < talentChance) {
+				Talent.onPotionUsed(curUser, curUser.pos, talentFactor);
+			}
+		}
 	}
 	
 	@Override
@@ -303,8 +311,18 @@ public class Potion extends Item {
 			
 		} else  {
 
-			Dungeon.level.pressCell( cell );
+			//aqua brew and storm clouds specifically don't press cells, so they can disarm traps
+			if (!(this instanceof AquaBrew) && !(this instanceof PotionOfStormClouds)){
+				Dungeon.level.pressCell( cell );
+			}
 			shatter( cell );
+
+			if (!anonymous) {
+				Catalog.countUse(getClass());
+				if (Random.Float() < talentChance) {
+					Talent.onPotionUsed(curUser, curUser.pos, talentFactor);
+				}
+			}
 			
 		}
 	}
@@ -314,10 +332,10 @@ public class Potion extends Item {
 	}
 	
 	public void shatter( int cell ) {
+		splash( cell );
 		if (Dungeon.level.heroFOV[cell]) {
 			GLog.i( Messages.get(Potion.class, "shatter") );
 			Sample.INSTANCE.play( Assets.Sounds.SHATTER );
-			splash( cell );
 		}
 	}
 
@@ -335,12 +353,6 @@ public class Potion extends Item {
 			if (!isKnown()) {
 				handler.know(this);
 				updateQuickslot();
-				Potion p = Dungeon.hero.belongings.getItem(getClass());
-				if (p != null)  p.setAction();
-				if (ExoticPotion.regToExo.get(getClass()) != null) {
-					p = Dungeon.hero.belongings.getItem(ExoticPotion.regToExo.get(getClass()));
-					if (p != null) p.setAction();
-				}
 			}
 			
 			if (Dungeon.hero.isAlive()) {
@@ -363,10 +375,16 @@ public class Potion extends Item {
 	public String name() {
 		return isKnown() ? super.name() : Messages.get(this, color);
 	}
-	
+
 	@Override
 	public String info() {
-		return isKnown() ? desc() : Messages.get(this, "unknown_desc");
+		//skip custom notes if anonymized and un-Ided
+		return (anonymous && (handler == null || !handler.isKnown( this ))) ? desc() : super.info();
+	}
+
+	@Override
+	public String desc() {
+		return isKnown() ? super.desc() : Messages.get(this, "unknown_desc");
 	}
 	
 	@Override
@@ -388,7 +406,7 @@ public class Potion extends Item {
 	}
 	
 	public static boolean allKnown() {
-		return handler.known().size() == Generator.Category.POTION.classes.length;
+		return handler != null && handler.known().size() == Generator.Category.POTION.classes.length;
 	}
 	
 	protected int splashColor(){
@@ -396,20 +414,23 @@ public class Potion extends Item {
 	}
 	
 	protected void splash( int cell ) {
-
 		Fire fire = (Fire)Dungeon.level.blobs.get( Fire.class );
-		if (fire != null)
-			fire.clear( cell );
-
-		final int color = splashColor();
+		if (fire != null) {
+			fire.clear(cell);
+		}
 
 		Char ch = Actor.findChar(cell);
 		if (ch != null && ch.alignment == Char.Alignment.ALLY) {
 			Buff.detach(ch, Burning.class);
 			Buff.detach(ch, Ooze.class);
-			Splash.at( ch.sprite.center(), color, 5 );
-		} else {
-			Splash.at( cell, color, 5 );
+		}
+
+		if (Dungeon.level.heroFOV[cell]) {
+			if (ch != null) {
+				Splash.at(ch.sprite.center(), splashColor(), 5);
+			} else {
+				Splash.at(cell, splashColor(), 5);
+			}
 		}
 	}
 	

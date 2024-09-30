@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -218,7 +218,7 @@ public class v0_6_X_Changes {
 				"\n" +
 				"I also made some important changes to challenges in v0.6.4, primarily to make stacked challenge games a bit easier. This made high-challenge games more feasible without extreme luck, which led to a big increase in challenge interest among highly skilled players."));
 		
-		changes.addButton( new ChangeButton(Icons.get(Icons.CHALLENGE_ON), "Challenges",
+		changes.addButton( new ChangeButton(Icons.get(Icons.CHALLENGE_COLOR), "Challenges",
 				"Challenges have received several major changes, with the goal of making them more fair and interesting.\n" +
 				"\n" +
 				"_-_ Challenges now have descriptions\n" +
@@ -321,7 +321,7 @@ public class v0_6_X_Changes {
 				"\n" +
 				"This means that after taking around half current HP in damage, breaking from paralysis becomes very likely, and immediately re-applying paralysis will not reset this resist chance."));
 		
-		changes.addButton( new ChangeButton(new Image(Assets.Environment.TILES_SEWERS, 48, 48, 16, 16), "Chasm changes",
+		changes.addButton( new ChangeButton(new Image(Assets.Environment.TILES_SEWERS, 176, 16, 16, 16), "Chasm changes",
 				"Dropping enemies into chasms is a very fun way to deal with enemies, but killing an enemy instantly and getting almost the full reward is simply too strong. This change should keep killing via chasms fun and useful, without it being as strong.\n" +
 				"\n" +
 				"_-_ Enemies killed via chasms now only award 50% exp"));
@@ -703,7 +703,7 @@ public class v0_6_X_Changes {
 				"_-_ Added a completely overhauled tutorial experience, which replaces the existing signpost system.\n\n" +
 				"_-_ Massively expanded the items catalog, now contains every identifiable item in the game."));
 		
-		changes.addButton( new ChangeButton(BadgeBanner.image(Badges.Badge.ALL_ITEMS_IDENTIFIED.image), "Badge Changes",
+		changes.addButton( new ChangeButton(Icons.BADGES.get(), "Badge Changes",
 				"_-_ Added new badges for identifying all weapons, armor, wands, and artifacts.\n\n" +
 				"_-_ All identification-based badges are now tied to the new item list system, and progress for them will persist between runs.\n\n" +
 				"_-_ Removed the Night Hunter badge\n\n" +

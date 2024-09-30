@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.RenderedTextBlock;
 import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
 import com.watabou.input.PointerEvent;
 import com.watabou.noosa.TextInput;
-import com.watabou.utils.DeviceCompat;
 
 public class WndTextInput extends Window {
 
@@ -91,6 +90,18 @@ public class WndTextInput extends Window {
 				onSelect(true, getText());
 				hide();
 			}
+
+			@Override
+			public void onChanged() {
+				super.onChanged();
+				if (btnCopy != null) btnCopy.enable(!getText().isEmpty());
+			}
+
+			@Override
+			public void onClipBoardUpdate() {
+				super.onClipBoardUpdate();
+				btnPaste.enable(Gdx.app.getClipboard().hasContents());
+			}
 		};
 		if (initialValue != null) textBox.setText(initialValue);
 		textBox.setMaxLength(maxLength);
@@ -128,6 +139,7 @@ public class WndTextInput extends Window {
 			}
 		};
 		btnCopy.icon(Icons.COPY.get());
+		btnCopy.enable(!textBox.getText().isEmpty());
 		add(btnCopy);
 
 		btnPaste = new RedButton(""){
@@ -146,11 +158,16 @@ public class WndTextInput extends Window {
 			@Override
 			protected void onClick() {
 				super.onClick();
-				textBox.pasteFromClipboard();
+				if (Gdx.app.getClipboard().hasContents()) {
+					textBox.pasteFromClipboard();
+				} else {
+					enable(false);
+				}
 			}
 
 		};
 		btnPaste.icon(Icons.PASTE.get());
+		btnPaste.enable(Gdx.app.getClipboard().hasContents());
 		add(btnPaste);
 
 		btnCopy.setRect(textBoxWidth + 2*MARGIN, pos, BUTTON_HEIGHT, BUTTON_HEIGHT);
@@ -199,13 +216,6 @@ public class WndTextInput extends Window {
 
 		PointerEvent.clearKeyboardThisPress = false;
 
-	}
-
-	@Override
-	public synchronized void update() {
-		super.update();
-		btnCopy.enable(!textBox.getText().isEmpty());
-		btnPaste.enable(Gdx.app.getClipboard().hasContents());
 	}
 
 	@Override

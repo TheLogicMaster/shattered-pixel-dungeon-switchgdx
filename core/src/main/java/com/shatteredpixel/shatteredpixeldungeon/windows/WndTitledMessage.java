@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,6 +49,7 @@ public class WndTitledMessage extends Window {
 		add(titlebar);
 
 		RenderedTextBlock text = PixelScene.renderTextBlock( 6 );
+		if (!useHighlighting()) text.setHightlighting(false);
 		text.text( message, width );
 		text.setPos( titlebar.left(), titlebar.bottom() + 2*GAP );
 		add( text );
@@ -65,5 +66,9 @@ public class WndTitledMessage extends Window {
 		bringToFront(titlebar);
 
 		resize( width, (int)text.bottom() + 2 );
+	}
+
+	protected boolean useHighlighting(){
+		return true;
 	}
 }

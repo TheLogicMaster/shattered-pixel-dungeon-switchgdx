@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
-	package="com.shatteredpixel.shatteredpixeldungeon.android"
-	android:installLocation="auto"
+    android:installLocation="auto"
 	android:targetSandboxVersion="2"
 	xmlns:dist="http://schemas.android.com/apk/distribution">
 
@@ -28,6 +27,8 @@
 		android:icon="@mipmap/ic_launcher"
 		android:label="${appName}"
 		android:theme="@android:style/Theme.Black.NoTitleBar"
+		android:appCategory="game"
+		android:isGame="true"
 		android:resizeableActivity="true"
 		android:allowBackup="true"
 		android:fullBackupOnly="true"
@@ -45,7 +46,6 @@
 		<activity
 			android:name=".AndroidMissingNativesHandler">
 		</activity>
-
 	</application>
 
 </manifest>

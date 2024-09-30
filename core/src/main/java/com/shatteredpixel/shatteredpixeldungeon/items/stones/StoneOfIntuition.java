@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.items.stones;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
+import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Identification;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
@@ -30,6 +31,7 @@ import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.ExoticPotio
 import com.shatteredpixel.shatteredpixeldungeon.items.rings.Ring;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.exotic.ExoticScroll;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.PixelScene;
@@ -66,9 +68,22 @@ public class StoneOfIntuition extends InventoryStone {
 	
 	@Override
 	protected void onItemSelected(Item item) {
-		
+
 		GameScene.show( new WndGuess(item));
 		
+	}
+
+	@Override
+	public String desc() {
+		String text = super.desc();
+		if (Dungeon.hero != null){
+			if (Dungeon.hero.buff(IntuitionUseTracker.class) == null){
+				text += "\n\n" + Messages.get(this, "break_info");
+			} else {
+				text += "\n\n" + Messages.get(this, "break_warn");
+			}
+		}
+		return text;
 	}
 
 	public static class IntuitionUseTracker extends Buff {{ revivePersists = true; }};
@@ -99,6 +114,7 @@ public class StoneOfIntuition extends InventoryStone {
 				protected void onClick() {
 					super.onClick();
 					useAnimation();
+					Catalog.countUse(StoneOfIntuition.class);
 					if (item.getClass() == curGuess){
 						if (item instanceof Ring){
 							((Ring) item).setKnown();
@@ -107,19 +123,14 @@ public class StoneOfIntuition extends InventoryStone {
 						}
 						GLog.p( Messages.get(WndGuess.class, "correct") );
 						curUser.sprite.parent.add( new Identification( curUser.sprite.center().offset( 0, -16 ) ) );
-
-						if (curUser.buff(IntuitionUseTracker.class) == null){
-							GLog.h( Messages.get(WndGuess.class, "preserved") );
-							new StoneOfIntuition().collect();
-							Buff.affect(curUser, IntuitionUseTracker.class);
-						} else {
-							curUser.buff(IntuitionUseTracker.class).detach();
-						}
 					} else {
-						if (curUser.buff(IntuitionUseTracker.class) != null) {
-							curUser.buff(IntuitionUseTracker.class).detach();
-						}
-						GLog.n( Messages.get(WndGuess.class, "incorrect") );
+						GLog.w( Messages.get(WndGuess.class, "incorrect") );
+					}
+					if (curUser.buff(IntuitionUseTracker.class) == null){
+						Buff.affect(curUser, IntuitionUseTracker.class);
+					} else {
+						curItem.detach( curUser.belongings.backpack );
+						curUser.buff(IntuitionUseTracker.class).detach();
 					}
 					curGuess = null;
 					hide();
@@ -204,12 +215,6 @@ public class StoneOfIntuition extends InventoryStone {
 			resize(WIDTH, 100);
 			
 		}
-		
-		
-		@Override
-		public void onBackPressed() {
-			super.onBackPressed();
-			new StoneOfIntuition().collect();
-		}
+
 	}
 }

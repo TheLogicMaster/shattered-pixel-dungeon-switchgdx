@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,13 +33,18 @@ import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 
 public class Foliage extends Blob {
-	
+
+	@Override
+	public Notes.Landmark landmark() {
+		return Notes.Landmark.GARDEN;
+	}
+
 	@Override
 	protected void evolve() {
 
 		int[] map = Dungeon.level.map;
 		
-		boolean visible = false;
+		boolean seen = false;
 
 		int cell;
 		for (int i = area.left; i < area.right; i++) {
@@ -55,7 +60,7 @@ public class Foliage extends Blob {
 						GameScene.updateMap(cell);
 					}
 
-					visible = visible || Dungeon.level.heroFOV[cell];
+					seen = seen || Dungeon.level.visited[cell];
 
 				} else {
 					off[cell] = 0;
@@ -69,10 +74,6 @@ public class Foliage extends Blob {
 			if (s != null){
 				s.prolong();
 			}
-		}
-
-		if (visible) {
-			Notes.add( Notes.Landmark.GARDEN );
 		}
 	}
 	

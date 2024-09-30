@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,11 @@ package com.shatteredpixel.shatteredpixeldungeon.actors.buffs;
 
 import com.shatteredpixel.shatteredpixeldungeon.Challenges;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.effects.FloatingText;
+import com.shatteredpixel.shatteredpixeldungeon.items.trinkets.SaltCube;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
+import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.ui.BuffIndicator;
 import com.watabou.utils.Bundle;
 
@@ -41,12 +45,21 @@ public class WellFed extends Buff {
 		left --;
 		if (left < 0){
 			detach();
+			if (target instanceof Hero) {
+				((Hero) target).resting = false;
+			}
 			return true;
-		} else if (left % 18 == 0){
-			target.HP = Math.min(target.HT, target.HP + 1);
+		} else if (left % 18 == 0 && target.HP < target.HT){
+			target.HP += 1;
+			target.sprite.showStatusWithIcon(CharSprite.POSITIVE, "1", FloatingText.HEALING);
+
+			if (target.HP == target.HT && target instanceof Hero) {
+				((Hero) target).resting = false;
+			}
 		}
-		
-		spend(TICK);
+
+		//salt cube does slow this buff down, but doesn't lessen the bonus health
+		spend(TICK / SaltCube.hungerGainMultiplier());
 		return true;
 	}
 	
@@ -72,12 +85,14 @@ public class WellFed extends Buff {
 
 	@Override
 	public String iconTextDisplay() {
-		return Integer.toString(left);
+		int visualLeft = (int)(left / SaltCube.hungerGainMultiplier());
+		return Integer.toString(visualLeft+1);
 	}
 	
 	@Override
 	public String desc() {
-		return Messages.get(this, "desc", left + 1);
+		int visualLeft = (int)(left / SaltCube.hungerGainMultiplier());
+		return Messages.get(this, "desc", visualLeft + 1);
 	}
 	
 	private static final String LEFT = "left";

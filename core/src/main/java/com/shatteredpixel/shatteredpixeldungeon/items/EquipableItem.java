@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.MagicImmune;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
 import com.shatteredpixel.shatteredpixeldungeon.effects.particles.ShadowParticle;
-import com.shatteredpixel.shatteredpixeldungeon.items.journal.Guidebook;
 import com.shatteredpixel.shatteredpixeldungeon.journal.Document;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Bundle;
 
 import java.util.ArrayList;
 
@@ -40,6 +40,8 @@ public abstract class EquipableItem extends Item {
 
 	public static final String AC_EQUIP		= "EQUIP";
 	public static final String AC_UNEQUIP	= "UNEQUIP";
+
+	public int customNoteID = -1;
 
 	{
 		bones = true;
@@ -56,7 +58,6 @@ public abstract class EquipableItem extends Item {
 	public boolean doPickUp(Hero hero, int pos) {
 		if (super.doPickUp(hero, pos)){
 			if (!isIdentified() && !Document.ADVENTURERS_GUIDE.isPageRead(Document.GUIDE_IDING)){
-				GLog.p(Messages.get(Guidebook.class, "hint"));
 				GameScene.flashForDocument(Document.ADVENTURERS_GUIDE, Document.GUIDE_IDING);
 			}
 			return true;
@@ -64,6 +65,8 @@ public abstract class EquipableItem extends Item {
 			return false;
 		}
 	}
+
+	protected static int slotOfUnequipped = -1;
 
 	@Override
 	public void execute( Hero hero, String action ) {
@@ -74,9 +77,15 @@ public abstract class EquipableItem extends Item {
 			//In addition to equipping itself, item reassigns itself to the quickslot
 			//This is a special case as the item is being removed from inventory, but is staying with the hero.
 			int slot = Dungeon.quickslot.getSlot( this );
+			slotOfUnequipped = -1;
 			doEquip(hero);
 			if (slot != -1) {
 				Dungeon.quickslot.setSlot( slot, this );
+				updateQuickslot();
+			//if this item wasn't quickslotted, but the item it is replacing as equipped was
+			//then also have the item occupy the unequipped item's quickslot
+			} else if (slotOfUnequipped != -1 && defaultAction() != null) {
+				Dungeon.quickslot.setSlot( slotOfUnequipped, this );
 				updateQuickslot();
 			}
 		} else if (action.equals( AC_UNEQUIP )) {
@@ -108,24 +117,28 @@ public abstract class EquipableItem extends Item {
 		Sample.INSTANCE.play( Assets.Sounds.CURSED );
 	}
 
-	protected float time2equip( Hero hero ) {
-		return 1;
+	protected float timeToEquip( Hero hero ) {
+		return 1f;
 	}
 
 	public abstract boolean doEquip( Hero hero );
 
 	public boolean doUnequip( Hero hero, boolean collect, boolean single ) {
 
-		if (cursed && hero.buff(MagicImmune.class) == null) {
+		if (cursed
+				&& hero.buff(MagicImmune.class) == null
+				&& (!hero.belongings.lostInventory() || keptThroughLostInventory())) {
 			GLog.w(Messages.get(EquipableItem.class, "unequip_cursed"));
 			return false;
 		}
 
 		if (single) {
-			hero.spendAndNext( time2equip( hero ) );
+			hero.spendAndNext( timeToEquip( hero ) );
 		} else {
-			hero.spend( time2equip( hero ) );
+			hero.spend( timeToEquip( hero ) );
 		}
+
+		slotOfUnequipped = Dungeon.quickslot.getSlot(this);
 
 		//temporarily keep this item so it can be collected
 		boolean wasKept = keptThoughLostInvent;
@@ -134,7 +147,7 @@ public abstract class EquipableItem extends Item {
 			onDetach();
 			Dungeon.quickslot.clearItem(this);
 			updateQuickslot();
-			if (collect) Dungeon.level.drop( this, hero.pos );
+			if (collect) Dungeon.level.drop( this, hero.pos ).sprite.drop();
 		}
 		keptThoughLostInvent = wasKept;
 
@@ -146,4 +159,18 @@ public abstract class EquipableItem extends Item {
 	}
 
 	public void activate( Char ch ){}
+
+	private static final String CUSTOM_NOTE_ID = "custom_note_id";
+
+	@Override
+	public void storeInBundle(Bundle bundle) {
+		super.storeInBundle(bundle);
+		if (customNoteID != -1)     bundle.put(CUSTOM_NOTE_ID, customNoteID);
+	}
+
+	@Override
+	public void restoreFromBundle(Bundle bundle) {
+		super.restoreFromBundle(bundle);
+		if (bundle.contains(CUSTOM_NOTE_ID))    customNoteID = bundle.getInt(CUSTOM_NOTE_ID);
+	}
 }

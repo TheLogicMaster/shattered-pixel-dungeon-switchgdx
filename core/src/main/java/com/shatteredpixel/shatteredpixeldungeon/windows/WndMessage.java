@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,18 +27,27 @@ import com.shatteredpixel.shatteredpixeldungeon.ui.Window;
 
 public class WndMessage extends Window {
 
-	private static final int WIDTH_P = 120;
-	private static final int WIDTH_L = 144;
+	private static final int WIDTH_MIN = 120;
+	private static final int WIDTH_MAX = 220;
 	private static final int MARGIN = 4;
 	
 	public WndMessage( String text ) {
 		
 		super();
+
+		int width = WIDTH_MIN;
 		
 		RenderedTextBlock info = PixelScene.renderTextBlock( text, 6 );
-		info.maxWidth((PixelScene.landscape() ? WIDTH_L : WIDTH_P) - MARGIN * 2);
+		info.maxWidth(width - MARGIN * 2);
 		info.setPos(MARGIN, MARGIN);
 		add( info );
+
+		while (PixelScene.landscape()
+				&& info.height() > 120
+				&& width < WIDTH_MAX){
+			width += 20;
+			info.maxWidth(width - MARGIN * 2);
+		}
 
 		resize(
 			(int)info.width() + MARGIN * 2,

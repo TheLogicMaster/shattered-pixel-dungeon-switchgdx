@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,6 +53,7 @@ public class IconTitle extends Component {
 		icon( icon );
 		label( Messages.titleCase( item.title() ) );
 		icon.view( item );
+		layout();
 	}
 	
 	public IconTitle( Heap heap ){
@@ -60,13 +61,13 @@ public class IconTitle extends Component {
 		icon( icon );
 		label( Messages.titleCase( heap.title() ) );
 		icon.view( heap );
+		layout();
 	}
 
 	public IconTitle( Image icon, String label ) {
-		super();
-
 		icon( icon );
 		label( label );
+		layout();
 	}
 
 	@Override
@@ -108,6 +109,10 @@ public class IconTitle extends Component {
 		}
 	}
 
+	public float reqWidth(){
+		return imIcon.width() + tfLabel.width() + GAP;
+	}
+
 	public void icon( Image icon ) {
 		if (icon != null) {
 			remove(imIcon);
@@ -126,6 +131,15 @@ public class IconTitle extends Component {
 
 	public void color( int color ) {
 		tfLabel.hardlight( color );
+	}
+
+	public float alpha(){
+		return imIcon.alpha();
+	}
+
+	public void alpha( float value ){
+		tfLabel.alpha(value);
+		imIcon.alpha(value);
 	}
 
 	public void health( float value ) {

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@ package com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic;
 
 import com.shatteredpixel.shatteredpixeldungeon.Assets;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
+import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.Item;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.Weapon;
 import com.shatteredpixel.shatteredpixeldungeon.items.weapon.melee.MeleeWeapon;
+import com.shatteredpixel.shatteredpixeldungeon.journal.Catalog;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
@@ -35,6 +37,7 @@ import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndBag;
 import com.shatteredpixel.shatteredpixeldungeon.windows.WndOptions;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Random;
 
 public class PotionOfMastery extends ExoticPotion {
 	
@@ -42,6 +45,8 @@ public class PotionOfMastery extends ExoticPotion {
 		icon = ItemSpriteSheet.Icons.POTION_MASTERY;
 
 		unique = true;
+
+		talentFactor = 2f;
 	}
 
 	protected static boolean identifiedByUse = false;
@@ -49,11 +54,10 @@ public class PotionOfMastery extends ExoticPotion {
 	@Override
 	//need to override drink so that time isn't spent right away
 	protected void drink(final Hero hero) {
-		curUser = hero;
-		curItem = detach( hero.belongings.backpack );
 
 		if (!isKnown()) {
 			identify();
+			curItem = detach( hero.belongings.backpack );
 			identifiedByUse = true;
 		} else {
 			identifiedByUse = false;
@@ -99,8 +103,6 @@ public class PotionOfMastery extends ExoticPotion {
 					}
 					public void onBackPressed() {}
 				} );
-			} else if (item == null && !anonymous){
-				curItem.collect( curUser.belongings.backpack );
 			} else if (item != null) {
 
 				if (item instanceof Weapon) {
@@ -114,8 +116,18 @@ public class PotionOfMastery extends ExoticPotion {
 
 				Sample.INSTANCE.play( Assets.Sounds.DRINK );
 				curUser.sprite.operate(curUser.pos);
-				curItem.detach(curUser.belongings.backpack);
 
+				if (!identifiedByUse) {
+					curItem.detach(curUser.belongings.backpack);
+				}
+				identifiedByUse = false;
+
+				if (!anonymous) {
+					Catalog.countUse(PotionOfMastery.class);
+					if (Random.Float() < talentChance) {
+						Talent.onPotionUsed(curUser, curUser.pos, talentFactor);
+					}
+				}
 			}
 
 		}

@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Charm;
 import com.shatteredpixel.shatteredpixeldungeon.actors.mobs.Mob;
 import com.shatteredpixel.shatteredpixeldungeon.effects.Speck;
-import com.shatteredpixel.shatteredpixeldungeon.items.potions.exotic.PotionOfDragonsBreath;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.CellSelector;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
@@ -45,10 +44,18 @@ public class ScrollOfSirensSong extends ExoticScroll {
 	{
 		icon = ItemSpriteSheet.Icons.SCROLL_SIREN;
 	}
+
+	protected static boolean identifiedByUse = false;
 	
 	@Override
 	public void doRead() {
-		if (!anonymous) curItem.collect(); //we detach it later
+		if (!isKnown()) {
+			identify();
+			curItem = detach(curUser.belongings.backpack);
+			identifiedByUse = true;
+		} else {
+			identifiedByUse = false;
+		}
 		GameScene.selectCell(targeter);
 	}
 
@@ -68,13 +75,11 @@ public class ScrollOfSirensSong extends ExoticScroll {
 				}
 			}
 
-			if (target == null && isKnown() && !anonymous){
+			if (target == null && !anonymous && !identifiedByUse){
 				GLog.w(Messages.get(ScrollOfSirensSong.class, "cancel"));
 				return;
 
 			} else {
-
-				detach(curUser.belongings.backpack);
 
 				curUser.sprite.centerEmitter().start( Speck.factory( Speck.HEART ), 0.2f, 5 );
 				Sample.INSTANCE.play( Assets.Sounds.CHARMS );
@@ -100,7 +105,10 @@ public class ScrollOfSirensSong extends ExoticScroll {
 					GLog.w(Messages.get(ScrollOfSirensSong.class, "no_target"));
 				}
 
-				identify();
+				if (!identifiedByUse) {
+					curItem.detach(curUser.belongings.backpack);
+				}
+				identifiedByUse = false;
 
 				readAnimation();
 

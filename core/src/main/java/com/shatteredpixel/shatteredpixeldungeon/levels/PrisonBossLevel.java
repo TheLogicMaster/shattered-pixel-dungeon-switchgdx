@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ import com.shatteredpixel.shatteredpixeldungeon.plants.Plant;
 import com.shatteredpixel.shatteredpixeldungeon.scenes.GameScene;
 import com.shatteredpixel.shatteredpixeldungeon.tiles.CustomTilemap;
 import com.shatteredpixel.shatteredpixeldungeon.ui.TargetHealthIndicator;
-import com.shatteredpixel.shatteredpixeldungeon.utils.BArray;
+import com.watabou.utils.BArray;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
@@ -94,10 +94,7 @@ public class PrisonBossLevel extends Level {
 		if (state == State.START){
 			Music.INSTANCE.end();
 		} else if (state == State.WON) {
-			Music.INSTANCE.playTracks(
-					new String[]{Assets.Music.PRISON_1, Assets.Music.PRISON_2, Assets.Music.PRISON_2},
-					new float[]{1, 1, 0.5f},
-					false);
+			Music.INSTANCE.playTracks(PrisonLevel.PRISON_TRACK_LIST, PrisonLevel.PRISON_TRACK_CHANCES, false);
 		} else {
 			Music.INSTANCE.play(Assets.Music.PRISON_BOSS, true);
 		}
@@ -135,20 +132,6 @@ public class PrisonBossLevel extends Level {
 	public void restoreFromBundle( Bundle bundle ) {
 		super.restoreFromBundle(bundle);
 		state = bundle.getEnum( STATE, State.class );
-
-		//pre-1.3.0 saves, recreates custom exit and entrance transitions
-		if (bundle.contains("entrance")){
-			transitions.clear();
-			if (state == State.START || state == State.WON){
-				transitions.add(new LevelTransition(this, ENTRANCE_POS, LevelTransition.Type.REGULAR_ENTRANCE));
-			}
-			if (state == State.WON){
-				LevelTransition exit = new LevelTransition(this, pointToCell(levelExit), LevelTransition.Type.REGULAR_EXIT);
-				exit.right+=2;
-				exit.bottom+=3;
-				transitions.add(exit);
-			}
-		}
 		
 		//in some states tengu won't be in the world, in others he will be.
 		if (state == State.START || state == State.FIGHT_PAUSE) {
@@ -226,6 +209,12 @@ public class PrisonBossLevel extends Level {
 		for (Point p : startTorches){
 			Painter.set(this, p, Terrain.WALL_DECO);
 		}
+
+		//we set up the exit for consistently with other levels, even though it's in the walls
+		LevelTransition exit = new LevelTransition(this, pointToCell(levelExit), LevelTransition.Type.REGULAR_EXIT);
+		exit.right+=2;
+		exit.bottom+=3;
+		transitions.add(exit);
 	}
 
 	//area where items/chars are preserved when moving to the arena
@@ -324,10 +313,13 @@ public class PrisonBossLevel extends Level {
 			cell += width();
 		}
 
-		LevelTransition exit = new LevelTransition(this, pointToCell(levelExit), LevelTransition.Type.REGULAR_EXIT);
-		exit.right+=2;
-		exit.bottom+=3;
-		transitions.add(exit);
+		//pre-2.5.1 saves, if exit wasn't already added
+		if (exit() == entrance()) {
+			LevelTransition exit = new LevelTransition(this, pointToCell(levelExit), LevelTransition.Type.REGULAR_EXIT);
+			exit.right += 2;
+			exit.bottom += 3;
+			transitions.add(exit);
+		}
 	}
 	
 	//keep track of removed items as the level is changed. Dump them back into the level at the end.
@@ -476,6 +468,7 @@ public class PrisonBossLevel extends Level {
 				tengu.state = tengu.HUNTING;
 				tengu.pos = (arena.left + arena.width()/2) + width()*(arena.top+2);
 				GameScene.add(tengu);
+				tengu.timeToNow();
 				tengu.notice();
 				
 				GameScene.flash(0x80FFFFFF);
@@ -535,7 +528,12 @@ public class PrisonBossLevel extends Level {
 				Game.runOnRenderThread(new Callback() {
 					@Override
 					public void call() {
-						Music.INSTANCE.end();
+						Music.INSTANCE.fadeOut(5f, new Callback() {
+							@Override
+							public void call() {
+								Music.INSTANCE.end();
+							}
+						});
 					}
 				});
 				break;
@@ -546,8 +544,6 @@ public class PrisonBossLevel extends Level {
 	
 	@Override
 	public void occupyCell(Char ch) {
-		super.occupyCell(ch);
-		
 		if (ch == Dungeon.hero){
 			switch (state){
 				case START:
@@ -563,6 +559,8 @@ public class PrisonBossLevel extends Level {
 					break;
 			}
 		}
+
+		super.occupyCell(ch);
 	}
 	
 	@Override
@@ -576,10 +574,19 @@ public class PrisonBossLevel extends Level {
 	
 	@Override
 	protected void createItems() {
-		Item item = Bones.get();
-		if (item != null) {
-			drop( item, randomRespawnCell( null ) ).setHauntedIfCursed().type = Heap.Type.REMAINS;
-		}
+		Random.pushGenerator(Random.Long());
+			ArrayList<Item> bonesItems = Bones.get();
+			if (bonesItems != null) {
+				int pos;
+				do {
+					pos = randomRespawnCell(null);
+				} while (pos == entrance());
+				for (Item i : bonesItems) {
+					drop(i, pos).setHauntedIfCursed().type = Heap.Type.REMAINS;
+				}
+			}
+		Random.popGenerator();
+
 		drop(new IronKey(10), randomPrisonCellPos());
 	}
 

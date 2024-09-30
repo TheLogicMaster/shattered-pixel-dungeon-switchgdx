@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,6 +65,11 @@ public class SacrificialFire extends Blob {
 	private Item prize;
 
 	@Override
+	public Notes.Landmark landmark() {
+		return Notes.Landmark.SACRIFICIAL_FIRE;
+	}
+
+	@Override
 	protected void evolve() {
 		int cell;
 		for (int i=area.top-1; i <= area.bottom; i++) {
@@ -85,9 +90,7 @@ public class SacrificialFire extends Blob {
 							}
 						}
 
-						if (off[cell] > 0 && Dungeon.level.heroFOV[cell]) {
-
-							Notes.add( Notes.Landmark.SACRIFICIAL_FIRE);
+						if (off[cell] > 0 && Dungeon.level.visited[cell]) {
 
 							if (Dungeon.level.mobCount() == 0
 									&& bonusSpawns > 0) {
@@ -166,8 +169,8 @@ public class SacrificialFire extends Blob {
 				} else if (ch instanceof Swarm && ((Swarm) ch).EXP == 0){
 					//give 1 exp for child swarms, instead of 0
 					exp = 1;
-				} else {
-					exp = ((Mob)ch).EXP;
+				} else if (((Mob) ch).EXP > 0) {
+					exp = 1 + ((Mob)ch).EXP;
 				}
 				exp *= Random.IntRange( 2, 3 );
 			} else if (ch instanceof Hero) {
@@ -187,7 +190,7 @@ public class SacrificialFire extends Blob {
 					GLog.w( Messages.get(SacrificialFire.class, "worthy"));
 				} else {
 					clear(firePos);
-					Notes.remove(Notes.Landmark.SACRIFICIAL_FIRE);
+					if (volume <= 0) Notes.remove( landmark() );
 
 					for (int i : PathFinder.NEIGHBOURS9){
 						CellEmitter.get(firePos+i).burst( SacrificialParticle.FACTORY, 20 );

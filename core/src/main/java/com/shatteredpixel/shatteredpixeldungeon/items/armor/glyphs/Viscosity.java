@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,13 +26,9 @@ import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
 import com.shatteredpixel.shatteredpixeldungeon.actors.Char;
 import com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Buff;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Hero;
-import com.shatteredpixel.shatteredpixeldungeon.actors.hero.HeroSubClass;
 import com.shatteredpixel.shatteredpixeldungeon.actors.hero.Talent;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor;
 import com.shatteredpixel.shatteredpixeldungeon.items.armor.Armor.Glyph;
-import com.shatteredpixel.shatteredpixeldungeon.items.rings.RingOfArcana;
-import com.shatteredpixel.shatteredpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.shatteredpixel.shatteredpixeldungeon.messages.Messages;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.CharSprite;
 import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSprite;
@@ -77,7 +73,7 @@ public class Viscosity extends Glyph {
 			int level = Math.max( 0, this.level );
 
 			float percent = (level+1)/(float)(level+6);
-			percent *= RingOfArcana.enchantPowerMultiplier(target);
+			percent *= genericProcChanceMultiplier(target);
 
 			int amount;
 			if (percent > 1f){
@@ -127,17 +123,11 @@ public class Viscosity extends Glyph {
 			damage = bundle.getInt( DAMAGE );
 		}
 		
-		@Override
-		public boolean attachTo( Char target ) {
-			if (super.attachTo( target )) {
-				postpone( TICK );
-				return true;
-			} else {
-				return false;
-			}
-		}
-		
 		public void prolong( int damage ) {
+			if (this.damage == 0){
+				//wait 1 turn before damaging if this is freshly applied
+				postpone(TICK);
+			}
 			this.damage += damage;
 		}
 		
@@ -161,7 +151,7 @@ public class Viscosity extends Glyph {
 
 					Badges.validateDeathFromFriendlyMagic();
 
-					Dungeon.fail( getClass() );
+					Dungeon.fail( this );
 					GLog.n( Messages.get(this, "ondeath") );
 				}
 				spend( TICK );

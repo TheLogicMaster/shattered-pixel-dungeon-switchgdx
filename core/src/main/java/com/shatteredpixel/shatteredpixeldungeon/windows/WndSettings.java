@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2015 Oleg Dolya
  *
  * Shattered Pixel Dungeon
- * Copyright (C) 2014-2022 Evan Debenham
+ * Copyright (C) 2014-2024 Evan Debenham
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -174,10 +174,10 @@ public class WndSettings extends WndTabbed {
 			protected void createChildren() {
 				super.createChildren();
 				switch(Messages.lang().status()){
-					case INCOMPLETE:
+					case X_UNFINISH:
 						icon.hardlight(1.5f, 0, 0);
 						break;
-					case UNREVIEWED:
+					case __UNREVIEW:
 						icon.hardlight(1.5f, 0.75f, 0f);
 						break;
 				}
@@ -227,6 +227,7 @@ public class WndSettings extends WndTabbed {
 		OptionSlider optBrightness;
 		OptionSlider optVisGrid;
 		OptionSlider optFollowIntensity;
+		OptionSlider optScreenShake;
 
 		@Override
 		protected void createChildren() {
@@ -252,7 +253,11 @@ public class WndSettings extends WndTabbed {
 			}
 			add(chkFullscreen);
 
-			if (DeviceCompat.isAndroid() && PixelScene.maxScreenZoom >= 2) {
+			//power saver is being slowly phased out, only show it on old (4.3-) android devices
+			// this is being phased out as the setting is useless on all but very old devices anyway
+			// and support is going to be dropped for 4.3- in the forseeable future
+			if (DeviceCompat.isAndroid() && PixelScene.maxScreenZoom >= 2
+				&& (SPDSettings.powerSaver() || !DeviceCompat.supportsFullScreen())) {
 				chkSaver = new CheckBox(Messages.get(this, "saver")) {
 					@Override
 					protected void onClick() {
@@ -331,6 +336,16 @@ public class WndSettings extends WndTabbed {
 			optFollowIntensity.setSelectedValue(SPDSettings.cameraFollow());
 			add(optFollowIntensity);
 
+			optScreenShake = new OptionSlider(Messages.get(this, "screenshake"),
+					Messages.get(this, "off"), Messages.get(this, "high"), 0, 4) {
+				@Override
+				protected void onChange() {
+					SPDSettings.screenShake(getSelectedValue());
+				}
+			};
+			optScreenShake.setSelectedValue(SPDSettings.screenShake());
+			add(optScreenShake);
+
 		}
 
 		@Override
@@ -375,14 +390,18 @@ public class WndSettings extends WndTabbed {
 			if (width > 200){
 				optBrightness.setRect(0, bottom + GAP, width/2-GAP/2, SLIDER_HEIGHT);
 				optVisGrid.setRect(optBrightness.right() + GAP, optBrightness.top(), width/2-GAP/2, SLIDER_HEIGHT);
+
+				optFollowIntensity.setRect(0, optVisGrid.bottom() + GAP, width/2-GAP/2, SLIDER_HEIGHT);
+				optScreenShake.setRect(optFollowIntensity.right() + GAP, optFollowIntensity.top(), width/2-GAP/2, SLIDER_HEIGHT);
 			} else {
 				optBrightness.setRect(0, bottom + GAP, width, SLIDER_HEIGHT);
 				optVisGrid.setRect(0, optBrightness.bottom() + GAP, width, SLIDER_HEIGHT);
+
+				optFollowIntensity.setRect(0, optVisGrid.bottom() + GAP, width, SLIDER_HEIGHT);
+				optScreenShake.setRect(0, optFollowIntensity.bottom() + GAP, width, SLIDER_HEIGHT);
 			}
 
-			optFollowIntensity.setRect(0, optVisGrid.bottom() + GAP, width, SLIDER_HEIGHT);
-
-			height = optFollowIntensity.bottom();
+			height = optScreenShake.bottom();
 		}
 
 	}
@@ -398,6 +417,7 @@ public class WndSettings extends WndTabbed {
 		CheckBox chkFlipTags;
 		ColorBlock sep2;
 		CheckBox chkFont;
+		CheckBox chkVibrate;
 
 		@Override
 		protected void createChildren() {
@@ -615,6 +635,22 @@ public class WndSettings extends WndTabbed {
 			};
 			chkFont.checked(SPDSettings.systemFont());
 			add(chkFont);
+
+			chkVibrate = new CheckBox(Messages.get(this, "vibration")){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					SPDSettings.vibration(checked());
+					if (checked()){
+						Game.vibrate(250);
+					}
+				}
+			};
+			chkVibrate.enable(Game.platform.supportsVibration());
+			if (chkVibrate.active) {
+				chkVibrate.checked(SPDSettings.vibration());
+			}
+			add(chkVibrate);
 		}
 
 		@Override
@@ -652,8 +688,16 @@ public class WndSettings extends WndTabbed {
 			sep2.size(width, 1);
 			sep2.y = height + GAP;
 
-			chkFont.setRect(0, sep2.y + 1 + GAP, width, BTN_HEIGHT);
-			height = chkFont.bottom();
+			if (width > 200) {
+				chkFont.setRect(0, sep2.y + 1 + GAP, width/2-1, BTN_HEIGHT);
+				chkVibrate.setRect(chkFont.right()+2, chkFont.top(), width/2-1, BTN_HEIGHT);
+				height = chkVibrate.bottom();
+
+			} else {
+				chkFont.setRect(0, sep2.y + 1 + GAP, width, BTN_HEIGHT);
+				chkVibrate.setRect(0, chkFont.bottom() + GAP, width, BTN_HEIGHT);
+				height = chkVibrate.bottom();
+			}
 		}
 
 	}
@@ -809,7 +853,7 @@ public class WndSettings extends WndTabbed {
 			chkNews.checked(SPDSettings.news());
 			add(chkNews);
 
-			if (Updates.supportsUpdates() && Updates.isUpdateable()) {
+			if (Updates.supportsUpdates() && Updates.supportsUpdatePrompts()) {
 				chkUpdates = new CheckBox(Messages.get(this, "updates")) {
 					@Override
 					protected void onClick() {
@@ -826,7 +870,7 @@ public class WndSettings extends WndTabbed {
 						@Override
 						protected void onClick() {
 							super.onClick();
-							SPDSettings.updates(checked());
+							SPDSettings.betas(checked());
 							Updates.clearUpdate();
 						}
 					};
@@ -894,6 +938,7 @@ public class WndSettings extends WndTabbed {
 		CheckBox chkMuteSFX;
 		ColorBlock sep3;
 		CheckBox chkIgnoreSilent;
+		CheckBox chkMusicBG;
 
 		@Override
 		protected void createChildren() {
@@ -956,7 +1001,7 @@ public class WndSettings extends WndTabbed {
 			chkMuteSFX.checked(!SPDSettings.soundFx());
 			add( chkMuteSFX );
 
-			if (DeviceCompat.isiOS() && Messages.lang() == Languages.ENGLISH){
+			if (DeviceCompat.isiOS()){
 
 				sep3 = new ColorBlock(1, 1, 0xFF000000);
 				add(sep3);
@@ -970,6 +1015,21 @@ public class WndSettings extends WndTabbed {
 				};
 				chkIgnoreSilent.checked(SPDSettings.ignoreSilentMode());
 				add(chkIgnoreSilent);
+
+			} else if (DeviceCompat.isDesktop()){
+
+				sep3 = new ColorBlock(1, 1, 0xFF000000);
+				add(sep3);
+
+				chkMusicBG = new CheckBox( Messages.get(this, "music_bg") ){
+					@Override
+					protected void onClick() {
+						super.onClick();
+						SPDSettings.playMusicInBackground(checked());
+					}
+				};
+				chkMusicBG.checked(SPDSettings.playMusicInBackground());
+				add(chkMusicBG);
 			}
 		}
 
@@ -1008,6 +1068,12 @@ public class WndSettings extends WndTabbed {
 
 				chkIgnoreSilent.setRect(0, sep3.y + 1 + GAP, width, BTN_HEIGHT);
 				height = chkIgnoreSilent.bottom();
+			} else if (chkMusicBG != null){
+				sep3.size(width, 1);
+				sep3.y = chkMuteSFX.bottom() + GAP;
+
+				chkMusicBG.setRect(0, sep3.y + 1 + GAP, width, BTN_HEIGHT);
+				height = chkMusicBG.bottom();
 			}
 		}
 
@@ -1050,13 +1116,13 @@ public class WndSettings extends WndTabbed {
 			txtLangInfo = PixelScene.renderTextBlock(6);
 			String info = "_" + Messages.titleCase(currLang.nativeName()) + "_ - ";
 			if (currLang == Languages.ENGLISH) info += "This is the source language, written by the developer.";
-			else if (currLang.status() == Languages.Status.REVIEWED) info += Messages.get(this, "completed");
-			else if (currLang.status() == Languages.Status.UNREVIEWED) info += Messages.get(this, "unreviewed");
-			else if (currLang.status() == Languages.Status.INCOMPLETE) info += Messages.get(this, "unfinished");
+			else if (currLang.status() == Languages.Status.O_COMPLETE) info += Messages.get(this, "completed");
+			else if (currLang.status() == Languages.Status.__UNREVIEW) info += Messages.get(this, "unreviewed");
+			else if (currLang.status() == Languages.Status.X_UNFINISH) info += Messages.get(this, "unfinished");
 			txtLangInfo.text(info);
 
-			if (currLang.status() == Languages.Status.UNREVIEWED) txtLangInfo.setHightlighting(true, CharSprite.WARNING);
-			else if (currLang.status() == Languages.Status.INCOMPLETE) txtLangInfo.setHightlighting(true, CharSprite.NEGATIVE);
+			if (currLang.status() == Languages.Status.__UNREVIEW) txtLangInfo.setHightlighting(true, CharSprite.WARNING);
+			else if (currLang.status() == Languages.Status.X_UNFINISH) txtLangInfo.setHightlighting(true, CharSprite.NEGATIVE);
 			add(txtLangInfo);
 
 			sep2 = new ColorBlock(1, 1, 0xFF000000);
@@ -1065,7 +1131,7 @@ public class WndSettings extends WndTabbed {
 			lanBtns = new RedButton[langs.size()];
 			for (int i = 0; i < langs.size(); i++){
 				final int langIndex = i;
-				RedButton btn = new RedButton(Messages.titleCase(langs.get(i).nativeName()), 7){
+				RedButton btn = new RedButton(Messages.titleCase(langs.get(i).nativeName()), 6){
 					@Override
 					protected void onClick() {
 						super.onClick();
@@ -1088,10 +1154,10 @@ public class WndSettings extends WndTabbed {
 					btn.textColor(TITLE_COLOR);
 				} else {
 					switch (langs.get(i).status()) {
-						case INCOMPLETE:
+						case X_UNFINISH:
 							btn.textColor(0x888888);
 							break;
-						case UNREVIEWED:
+						case __UNREVIEW:
 							btn.textColor(0xBBBBBB);
 							break;
 					}
