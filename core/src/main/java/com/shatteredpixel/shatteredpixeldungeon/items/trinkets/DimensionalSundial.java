@@ -26,7 +26,7 @@ import com.shatteredpixel.shatteredpixeldungeon.sprites.ItemSpriteSheet;
 import com.shatteredpixel.shatteredpixeldungeon.utils.GLog;
 
 import java.util.Calendar;
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
 
 public class DimensionalSundial extends Trinket {
 
@@ -58,16 +58,16 @@ public class DimensionalSundial extends Trinket {
 
 	public static float spawnMultiplierAtCurrentTime(){
 		if (trinketLevel(DimensionalSundial.class) != -1) {
-			Calendar cal = GregorianCalendar.getInstance();
-			if (cal.get(Calendar.HOUR_OF_DAY) >= 20 || cal.get(Calendar.HOUR_OF_DAY) <= 7) {
-				if (!sundialWarned){
-					GLog.w(Messages.get(DimensionalSundial.class, "warning"));
-					sundialWarned = true;
-				}
-				return enemySpawnMultiplierNighttime();
-			} else {
+//			Calendar cal = GregorianCalendar.getInstance();
+//			if (cal.get(Calendar.HOUR_OF_DAY) >= 20 || cal.get(Calendar.HOUR_OF_DAY) <= 7) {
+//				if (!sundialWarned){
+//					GLog.w(Messages.get(DimensionalSundial.class, "warning"));
+//					sundialWarned = true;
+//				}
+//				return enemySpawnMultiplierNighttime();
+//			} else {
 				return enemySpawnMultiplierDaytime();
-			}
+//			}
 		} else {
 			return 1f;
 		}

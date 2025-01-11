@@ -28,7 +28,7 @@ import com.shatteredpixel.shatteredpixeldungeon.SPDSettings;
 import com.shatteredpixel.shatteredpixeldungeon.ShatteredPixelDungeon;
 
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
+//import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -168,7 +168,7 @@ public class Messages {
 
 	public static String decimalFormat( String format, double number ){
 		if (!formatters.containsKey(format)){
-			formatters.put(format, new DecimalFormat(format, DecimalFormatSymbols.getInstance(Locale.ENGLISH)));
+			formatters.put(format, new DecimalFormat(format/*, DecimalFormatSymbols.getInstance(Locale.ENGLISH)*/));
 		}
 		return formatters.get(format).format(number);
 	}

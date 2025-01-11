@@ -84,4 +84,9 @@ public class SwitchPlatformSupport extends PlatformSupport {
 			return regularsplitter.split(text);
 		}
 	}
+
+	@Override
+	public boolean supportsVibration() {
+		return false;
+	}
 }

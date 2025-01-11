@@ -22,7 +22,7 @@
 package com.shatteredpixel.shatteredpixeldungeon.utils;
 
 import java.util.Calendar;
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
 
 public enum Holiday {
 
@@ -52,73 +52,73 @@ public enum Holiday {
 	}
 
 	public static Holiday getCurrentHoliday(){
-		if (cached == null){
-			cached = getHolidayForDate((GregorianCalendar) GregorianCalendar.getInstance());
-		}
+//		if (cached == null){
+//			cached = getHolidayForDate((GregorianCalendar) GregorianCalendar.getInstance());
+//		}
 		return cached;
 	}
 
 	//requires a gregorian calendar
-	public static Holiday getHolidayForDate(GregorianCalendar cal){
-
-		//Lunar New Year
-		if (isLunarNewYear(cal.get(Calendar.YEAR),
-				cal.get(Calendar.DAY_OF_YEAR))){
-			return LUNAR_NEW_YEAR;
-		}
-
-		//April Fools
-		if (cal.get(Calendar.MONTH) == Calendar.APRIL
-				&& cal.get(Calendar.DAY_OF_MONTH) == 1){
-			return APRIL_FOOLS;
-		}
-
-		//Easter
-		if (isEaster(cal.get(Calendar.YEAR),
-				cal.get(Calendar.DAY_OF_YEAR),
-				cal.getActualMaximum(Calendar.DAY_OF_YEAR) == 366)){
-			return EASTER;
-		}
-
-		//Pride
-		if (cal.get(Calendar.MONTH) == Calendar.JUNE
-				&& cal.get(Calendar.DAY_OF_MONTH) >= 24){
-			return PRIDE;
-		}
-
-		//Shattered's Birthday
-		if (cal.get(Calendar.MONTH) == Calendar.AUGUST
-				&& cal.get(Calendar.DAY_OF_MONTH) <= 7){
-			return SHATTEREDPD_BIRTHDAY;
-		}
-
-		//Halloween
-		if (cal.get(Calendar.MONTH) == Calendar.OCTOBER
-				&& cal.get(Calendar.DAY_OF_MONTH) >= 24){
-			return HALLOWEEN;
-		}
-
-		//Pixel Dungeon's Birthday
-		if (cal.get(Calendar.MONTH) == Calendar.DECEMBER
-				&& cal.get(Calendar.DAY_OF_MONTH) <= 7){
-			return PD_BIRTHDAY;
-		}
-
-		//Winter Holidays
-		if (cal.get(Calendar.MONTH) == Calendar.DECEMBER
-				&& cal.get(Calendar.DAY_OF_MONTH) >= 15
-				&& cal.get(Calendar.DAY_OF_MONTH) <= 26){
-			return WINTER_HOLIDAYS;
-		}
-
-		//New Years
-		if ((cal.get(Calendar.MONTH) == Calendar.DECEMBER && cal.get(Calendar.DAY_OF_MONTH) >= 27)
-				|| (cal.get(Calendar.MONTH) == Calendar.JANUARY && cal.get(Calendar.DAY_OF_MONTH) <= 2)){
-			return NEW_YEARS;
-		}
-
-		return NONE;
-	}
+//	public static Holiday getHolidayForDate(GregorianCalendar cal){
+//
+//		//Lunar New Year
+//		if (isLunarNewYear(cal.get(Calendar.YEAR),
+//				cal.get(Calendar.DAY_OF_YEAR))){
+//			return LUNAR_NEW_YEAR;
+//		}
+//
+//		//April Fools
+//		if (cal.get(Calendar.MONTH) == Calendar.APRIL
+//				&& cal.get(Calendar.DAY_OF_MONTH) == 1){
+//			return APRIL_FOOLS;
+//		}
+//
+//		//Easter
+//		if (isEaster(cal.get(Calendar.YEAR),
+//				cal.get(Calendar.DAY_OF_YEAR),
+//				cal.getActualMaximum(Calendar.DAY_OF_YEAR) == 366)){
+//			return EASTER;
+//		}
+//
+//		//Pride
+//		if (cal.get(Calendar.MONTH) == Calendar.JUNE
+//				&& cal.get(Calendar.DAY_OF_MONTH) >= 24){
+//			return PRIDE;
+//		}
+//
+//		//Shattered's Birthday
+//		if (cal.get(Calendar.MONTH) == Calendar.AUGUST
+//				&& cal.get(Calendar.DAY_OF_MONTH) <= 7){
+//			return SHATTEREDPD_BIRTHDAY;
+//		}
+//
+//		//Halloween
+//		if (cal.get(Calendar.MONTH) == Calendar.OCTOBER
+//				&& cal.get(Calendar.DAY_OF_MONTH) >= 24){
+//			return HALLOWEEN;
+//		}
+//
+//		//Pixel Dungeon's Birthday
+//		if (cal.get(Calendar.MONTH) == Calendar.DECEMBER
+//				&& cal.get(Calendar.DAY_OF_MONTH) <= 7){
+//			return PD_BIRTHDAY;
+//		}
+//
+//		//Winter Holidays
+//		if (cal.get(Calendar.MONTH) == Calendar.DECEMBER
+//				&& cal.get(Calendar.DAY_OF_MONTH) >= 15
+//				&& cal.get(Calendar.DAY_OF_MONTH) <= 26){
+//			return WINTER_HOLIDAYS;
+//		}
+//
+//		//New Years
+//		if ((cal.get(Calendar.MONTH) == Calendar.DECEMBER && cal.get(Calendar.DAY_OF_MONTH) >= 27)
+//				|| (cal.get(Calendar.MONTH) == Calendar.JANUARY && cal.get(Calendar.DAY_OF_MONTH) <= 2)){
+//			return NEW_YEARS;
+//		}
+//
+//		return NONE;
+//	}
 
 	//has to be hard-coded on a per-year basis =S
 	public static boolean isLunarNewYear(int year, int dayOfYear){

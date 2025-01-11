@@ -63,7 +63,7 @@ import com.watabou.utils.Random;
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
+//import java.util.GregorianCalendar;
 
 public class SurfaceScene extends PixelScene {
 
@@ -115,8 +115,8 @@ public class SurfaceScene extends PixelScene {
 		window.camera = viewport;
 		add( window );
 
-		Calendar cal = GregorianCalendar.getInstance();
-		boolean dayTime = cal.get(Calendar.HOUR_OF_DAY) >= 8 && cal.get(Calendar.HOUR_OF_DAY) <= 19;
+//		Calendar cal = GregorianCalendar.getInstance();
+		boolean dayTime = true;// cal.get(Calendar.HOUR_OF_DAY) >= 8 && cal.get(Calendar.HOUR_OF_DAY) <= 19;
 		
 		Sky sky = new Sky( dayTime );
 		sky.scale.set( SKY_WIDTH, SKY_HEIGHT );
