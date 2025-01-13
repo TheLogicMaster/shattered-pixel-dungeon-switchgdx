@@ -29,12 +29,12 @@ allprojects {
         appAndroidMinSDK = 14
         appAndroidTargetSDK = 34
 
-        gdxVersion = '1.12.1'
+        gdxVersion = '1.13.1'
         gdxControllersVersion = '2.2.4-SNAPSHOT'
         robovmVersion = '2.3.21'
 
-        clearwingVersion = '3.0.0'
-        switchGdxVersion = '3.0.0'
+        clearwingVersion = '3.0.3'
+        switchGdxVersion = '3.0.1'
     }
     version = appVersionName
 
